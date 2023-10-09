@@ -18,7 +18,7 @@ So using the batch size is a great way to tune it.
         public virtual string? Province { get; set; }
         public virtual string? Country { get; set; }
 
-        public virtual ISet<Course>? Courses { get; set; }
+        public virtual ISet<Course>? Courses { get;  set; }
 
         /*        public Person()
                 {

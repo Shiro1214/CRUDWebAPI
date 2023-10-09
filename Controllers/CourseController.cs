@@ -44,7 +44,7 @@ namespace WebApplication1.Controllers
         public IActionResult GetCourses()
         {
 
-            List<Course> result;
+            List<CourseDto> result;
 
             try
             {
@@ -58,6 +58,47 @@ namespace WebApplication1.Controllers
             }
 
             return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("GetCourse")]
+        [Produces("application/json")]
+        public IActionResult GetCourses(int id)
+        {
+
+            CourseDto result;
+
+            try
+            {
+                result = service.GetCourse(id);
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine(ex.Message);
+                return BadRequest("Invalid Data");
+            }
+
+            return Ok(result);
+        }
+        [HttpDelete]
+        [Route("DeleteCourse")]
+        [Produces("application/json")]
+        public String DeleteCourse(int id)
+        {
+            try
+            {
+                service.DeleteCourse(id);
+
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine(ex.Message);
+                return "Invalid Data";
+            }
+
+            return "Ok";
         }
     }
 }

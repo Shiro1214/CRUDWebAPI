@@ -16,6 +16,7 @@ namespace WebApplication1.Mapping
                 .Table("course_person")
                 .ParentKeyColumn("course_id")
                 .ChildKeyColumn("person_id")
+                .Cascade.All()
                 .Inverse();
             //HasManyToMany(x => x.People).Inverse().Cascade.All().Table("course_person");
         }

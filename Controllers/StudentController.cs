@@ -21,7 +21,7 @@ namespace WebApplication1.Controllers
         public IActionResult GetStudent(int id)
         {
 
-            Person result;
+            PersonDto result;
 
             try
             {
@@ -41,10 +41,11 @@ namespace WebApplication1.Controllers
         public IActionResult GetStudentCourse(int id)
         {
 
-            List<Course> result;
+            List<CourseDto> result;
 
             try
             {
+
                 result = service.GetStudentCourse(id);
             }
             catch (Exception ex)
