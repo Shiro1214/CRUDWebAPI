@@ -2,8 +2,9 @@
 {
     public class CoursePerson
     {
-        public virtual int person_id { get; set; }
-        public virtual int course_id { get; set; }
+        public virtual int ID { get; set; }
+        public virtual Person person { get; set; }
+        public virtual Course course { get; set; }
         public virtual LetterGrade? gradeLetter { get; set; }
     }
 }

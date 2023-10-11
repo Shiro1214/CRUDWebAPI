@@ -11,14 +11,10 @@ namespace WebApplication1.Mapping
             Id(x => x.ID).GeneratedBy.Increment();
             Map(x => x.title);
             Map(x => x.section);
-
-            HasManyToMany(x => x.People)
-                .Table("course_person")
-                .ParentKeyColumn("course_id")
-                .ChildKeyColumn("person_id")
-                .Cascade.All()
-                .Inverse();
-            //HasManyToMany(x => x.People).Inverse().Cascade.All().Table("course_person");
+            HasMany(x => x.CoursePersons)
+            .Cascade.AllDeleteOrphan()
+            .Inverse()
+            .KeyColumn("course_id");
         }
 
     }

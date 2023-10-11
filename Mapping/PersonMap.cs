@@ -22,12 +22,10 @@ namespace WebApplication1.Mapping
             Map(x => x.City);
             Map(x => x.Province);
             Map(x => x.Country);
-            HasManyToMany(x => x.Courses)
-          .Table("course_person")
-          .ParentKeyColumn("person_id")
-          .ChildKeyColumn("course_id")
-          .LazyLoad()
-          .Cascade.SaveUpdate();
+            HasMany(x => x.CoursePersons)
+            .Cascade.AllDeleteOrphan()
+            .Inverse()
+            .KeyColumn("person_id");
             // HasManyToMany(x => x.Courses).Cascade.All().Table("course_person");
         }
     }

@@ -4,6 +4,7 @@ using NHibernate;
 using NHibernate.Tool.hbm2ddl;
 using NHibernate.Util;
 using System;
+using System.Security.Cryptography;
 using System.Transactions;
 using WebApplication1.Models;
 
@@ -40,6 +41,24 @@ namespace WebApplication1.Services
 
 
         }
+
+        public bool ChangeStudentGrade(int stuId, int courseId, LetterGrade grade)
+        {
+
+            NHibernate.ISession session = _sessionFactory.OpenSession();
+            ITransaction transaction = session.BeginTransaction();
+
+            var cur = session.Query<CoursePerson>().Where(cp => cp.person.ID == stuId && cp.course.ID == courseId).SingleOrDefault();
+
+            if (cur == null) { return false; }
+
+            cur.gradeLetter = grade;
+            session.SaveOrUpdate(cur);
+
+            transaction.Commit();
+
+            return true;
+        }
         public bool AddStudentToCourse(int stuId, int courseId)
         {
             
@@ -59,34 +78,15 @@ namespace WebApplication1.Services
             {
                 return false;
             }
-            if (student.Courses != null)
-            {
-                student.Courses.Add(course);
-            } else
-            {
-                student.Courses = new HashSet<Course>
-                {
-                    course
-                };
-            }
 
-            if (course.People != null)
+            var cp = new CoursePerson
             {
-                course.People.Add(student);
-            }
-            else
-            {
-                course.People = new HashSet<Person>
-                {
-                    student
-                };
-            }
+                person = student,
+                course = course,
+                gradeLetter = null
+            };
 
-            /*            student.addCourse(course);
-                        course.addPerson(student);*/
-
-            session.SaveOrUpdate(student);
-            session.SaveOrUpdate(course);
+            session.SaveOrUpdate(cp);
 
             transaction.Commit();
 
@@ -94,7 +94,6 @@ namespace WebApplication1.Services
         }
         public Person CreateStudent(Person student)
         {
-            student.Courses = null;
             using (NHibernate.ISession session = _sessionFactory.OpenSession())
             {
                 using (ITransaction transaction = session.BeginTransaction())
@@ -168,7 +167,28 @@ namespace WebApplication1.Services
 */
             return courses;
         }
+        public LetterGrade? GetStudentGrade(int pid, int cid)
+        {
+            LetterGrade? g;
 
+            using (NHibernate.ISession session = _sessionFactory.OpenSession())
+            {
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    //var p = session.Get<Person>(pid);
+
+                    var coursePerson = session.QueryOver<CoursePerson>()
+                       .Where(cp => cp.person.ID == pid && cp.course.ID == cid).SingleOrDefault();
+                    g = coursePerson.gradeLetter;
+
+                    transaction.Commit();
+                }
+
+            }
+
+
+            return g;
+        }
         public List<CourseDto> GetStudentCourse(int pid)
         {
             List<CourseDto> courses = new List<CourseDto>();
@@ -179,49 +199,22 @@ namespace WebApplication1.Services
                 {
                     //var p = session.Get<Person>(pid);
 
-                    Person student = session.QueryOver<Person>()
-                        .Where(e => e.ID == pid)
-                        //.JoinQueryOver(e => e.Courses)
-                        .SingleOrDefault();
-                    if (student != null)
-                    {
-                        var personDto = new PersonDto
-                        {
-                            Id = student.ID,
-                            Name = student.FirstMidName + " " + student.LastName,
-                            Courses = student.Courses.Select(course => new CourseDto
-                            {
-                                Id = course.ID,
-                                Name = course.title + course.section,
+                     courses = session.QueryOver<CoursePerson>()
+                        .Where(cp => cp.person.ID == pid)
+                        .Select(cp => cp.course)
+                        .List<Course>().Select(c => new CourseDto {
 
-                                // Map other course properties as needed
-                            }).ToList(),
-                            // Map other person properties as needed
-                        };
-                        courses = personDto.Courses;
-                        
-                    }
+                            Id = c.ID,
+                            Name = c.title + c.section
 
-
-                    /*if (student != null)
-                    {
-                        courses.AddRange(student.Courses);
-                    }
-                    foreach (var course in courses)
-                    {
-                        NHibernateUtil.Initialize(course.People);
-                    }
-                    */
+                        }
+                        ).ToList();
 
                     transaction.Commit();
                 }
 
             }
-            /*
-                        foreach (var c in courses)
-                        {
-                            Console.WriteLine(c.title);
-                        }*/
+
 
             return courses;
         }
@@ -237,22 +230,22 @@ namespace WebApplication1.Services
                 Id = p.ID,
                 Name = p.FirstMidName + " " + p.LastName,
                 Courses = new List<CourseDto>()
-/*                Courses = p.Courses.Select(course => new CourseDto
-                {
-                    Id = course.ID,
-                    Name = course.title + course.section
-                    // Map other course properties as needed
-                }).ToList()*/
-            };
-            transaction.Commit();
-            /*            using (NHibernate.ISession session = _sessionFactory.OpenSession())
+                
+                /*session.QueryOver<CoursePerson>()
+                        .Where(cp => cp.person.ID == id)
+                        .Select(cp => cp.course)
+                        .List<Course>().Select(c => new CourseDto
                         {
-                            using (ITransaction transaction = session.BeginTransaction())
-                            { 
-                                result = session.Get<Person>(id);
-                                transaction.Commit();
-                            }
-                        }*/
+
+                            Id = c.ID,
+                            Name = c.title + c.section
+
+                        }
+                        ).ToList()*/
+
+        };
+            transaction.Commit();
+
             return result;
         }
         public CourseDto GetCourse(int id)
@@ -266,28 +259,21 @@ namespace WebApplication1.Services
             {
                 Id = c.ID,
                 Name = c.title + " " + c.section,
-                People = c.People.Select(per => new PersonDto
+                People = session.QueryOver<CoursePerson>()
+                        .Where(cp => cp.course.ID == id)
+                        .Select(cp => cp.person)
+                        .List<Person>().Select(p => new PersonDto
                 {
-                    Id = per.ID,
-                    Name = per.FirstMidName + " " + per.LastName
-                    // Map other course properties as needed
-                }).ToList()
+                            Id = p.ID,
+                            Name = p.FirstMidName + " " + p.LastName,
+                            Courses = new List<CourseDto>()
+                        }).ToList()
             };
             transaction.Commit();
-            /*            using (NHibernate.ISession session = _sessionFactory.OpenSession())
-                        {
-                            using (ITransaction transaction = session.BeginTransaction())
-                            { 
-                                result = session.Get<Person>(id);
-                                transaction.Commit();
-                            }
-                        }*/
             return result;
         }
         public bool Update(int id, Person updated)
         {
-
-            updated.Courses = null;
 
             using (NHibernate.ISession session = _sessionFactory.OpenSession())
             {
@@ -307,7 +293,6 @@ namespace WebApplication1.Services
                         cur.City = updated.City;
                         cur.Country = updated.Country;
                         cur.Province = updated.Province;
-                        //cur.Courses = updated.Courses;
                         session.Update(cur);
                         transaction.Commit();
                         return true;
