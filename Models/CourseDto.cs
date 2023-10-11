@@ -2,9 +2,10 @@
 {
     public class CourseDto
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public List<PersonDto> People { get; set; }
+        public virtual int ID { get; set; }
+        public virtual string? title { get; set; }
+        public virtual string? section { get; set; }
+        public List<PersonDto>? People { get;  set; }
         // Other properties you need
     }
 }

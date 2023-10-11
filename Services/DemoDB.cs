@@ -4,6 +4,7 @@ using NHibernate;
 using NHibernate.Tool.hbm2ddl;
 using NHibernate.Util;
 using System;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
 using System.Transactions;
 using WebApplication1.Models;
@@ -67,7 +68,7 @@ namespace WebApplication1.Services
 
             var student = session.Get<Person>(stuId);
 
-            if (student.PersonType == PersonType.Teacher)
+            if (student == null)
             {
                 return false;
             }
@@ -92,42 +93,71 @@ namespace WebApplication1.Services
 
             return true;
         }
-        public Person CreateStudent(Person student)
+        public Person CreatePerson(PersonDto person)
         {
+            var newStudent = new Person
+            {
+                ID = person.Id,
+                LastName = person.LastName,
+                FirstMidName = person.FirstMidName,
+                PersonType = person.PersonType,
+                Street = person.Street,
+                City = person.City,
+                Province = person.Province,
+                Country = person.Country,
+                CoursePersons = null
+            };
             using (NHibernate.ISession session = _sessionFactory.OpenSession())
             {
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    session.Save(student);
+                    
+                    session.Save(newStudent);
                     transaction.Commit();
                 }
 
             }
-            return student;
+            return newStudent;
 
         }
-        public Course CreateCourse(Course course)
+        public Course CreateCourse(CourseDto course)
         {
+            var newCourse = new Course
+            {
+                ID = course.ID,
+                title = course.title,
+                section = course.section,
+                CoursePersons = null
+            };
             using (NHibernate.ISession session = _sessionFactory.OpenSession())
             {
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    session.Save(course);
+                    session.Save(newCourse);
                     transaction.Commit();
                 }
 
             }
-            return course;
+            return newCourse;
 
         }
-        public List<Person> GetCurrentStudents()
+        public List<PersonDto> GetCurrentPeopleOfType(PersonType pType)
         {
-            List<Person> students = new List<Person>();
+            List<PersonDto> students;
             NHibernate.ISession session = _sessionFactory.OpenSession();
 
             ITransaction transaction = session.BeginTransaction();
   
-            students = session.Query<Person>().Where(p => p.PersonType == PersonType.Student).ToList();
+            students = session.Query<Person>().Where(p => p.PersonType == pType).ToList().Select(student => new PersonDto {
+                Id = student.ID,
+                FirstMidName = student.FirstMidName,
+                LastName = student.LastName,
+                PersonType = student.PersonType,
+                Street = student.Street,
+                City = student.City,
+                Country = student.Country,
+                Province = student.Province
+        }).ToList();
 
             transaction.Commit();
 
@@ -135,6 +165,7 @@ namespace WebApplication1.Services
             return students;
 
         }
+
 
         public List<CourseDto> GetCourses()
         {
@@ -145,8 +176,8 @@ namespace WebApplication1.Services
                 {
                     courses = session.Query<Course>().Select(c => new CourseDto
                     {
-                        Id = c.ID,
-                        Name = c.title + c.section,
+                        ID = c.ID,
+                        title = c.title, section= c.section,
                         People = new List<PersonDto>()
                         /*People = c.People.Select(per => new PersonDto
                         {
@@ -179,6 +210,7 @@ namespace WebApplication1.Services
 
                     var coursePerson = session.QueryOver<CoursePerson>()
                        .Where(cp => cp.person.ID == pid && cp.course.ID == cid).SingleOrDefault();
+
                     g = coursePerson.gradeLetter;
 
                     transaction.Commit();
@@ -189,7 +221,7 @@ namespace WebApplication1.Services
 
             return g;
         }
-        public List<CourseDto> GetStudentCourse(int pid)
+        public List<CourseDto> GetPersonCourses(int pid)
         {
             List<CourseDto> courses = new List<CourseDto>();
 
@@ -204,8 +236,9 @@ namespace WebApplication1.Services
                         .Select(cp => cp.course)
                         .List<Course>().Select(c => new CourseDto {
 
-                            Id = c.ID,
-                            Name = c.title + c.section
+                            ID = c.ID,
+                            title = c.title,
+                            section = c.section
 
                         }
                         ).ToList();
@@ -228,7 +261,8 @@ namespace WebApplication1.Services
             result = new PersonDto
             {
                 Id = p.ID,
-                Name = p.FirstMidName + " " + p.LastName,
+                FirstMidName = p.FirstMidName,
+                LastName = p.LastName,
                 Courses = new List<CourseDto>()
                 
                 /*session.QueryOver<CoursePerson>()
@@ -257,15 +291,17 @@ namespace WebApplication1.Services
             var c = session.Get<Course>(id);
             result = new CourseDto
             {
-                Id = c.ID,
-                Name = c.title + " " + c.section,
+                ID = c.ID,
+                title = c.title,
+                section = c.section,
                 People = session.QueryOver<CoursePerson>()
                         .Where(cp => cp.course.ID == id)
                         .Select(cp => cp.person)
                         .List<Person>().Select(p => new PersonDto
                 {
                             Id = p.ID,
-                            Name = p.FirstMidName + " " + p.LastName,
+                            FirstMidName = p.FirstMidName,
+                            LastName = p.LastName,
                             Courses = new List<CourseDto>()
                         }).ToList()
             };

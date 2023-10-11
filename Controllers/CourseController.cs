@@ -18,7 +18,7 @@ namespace WebApplication1.Controllers
         [HttpPost]
         [Route("CreateCourse")]
         [Produces("application/json")]
-        public IActionResult CreateCourse(Course course)
+        public IActionResult CreateCourse(CourseDto course)
         {
 
             Course result;

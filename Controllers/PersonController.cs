@@ -7,18 +7,18 @@ namespace WebApplication1.Controllers
     
     [Route("api/[controller]")]
     [ApiController]
-    public class StudentController : ControllerBase
+    public class PersonController : ControllerBase
     {
         private readonly DemoDB service;
 
-        public StudentController(DemoDB service)
+        public PersonController(DemoDB service)
         {
             this.service = service;
         }
         [HttpGet]
-        [Route("GetStudent")]
+        [Route("GetPerson")]
         [Produces("application/json")]
-        public IActionResult GetStudent(int id)
+        public IActionResult GetPerson(int id)
         {
 
             PersonDto result;
@@ -35,58 +35,19 @@ namespace WebApplication1.Controllers
 
             return Ok(result);
         }
-        [HttpGet]
-        [Route("GetStudentCourse")]
-        [Produces("application/json")]
-        public IActionResult GetStudentCourse(int id)
-        {
-
-            List<CourseDto> result;
-
-            try
-            {
-
-                result = service.GetStudentCourse(id);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
-            }
-
-            return Ok(result);
-        }
-        [HttpPut]
-        [Route("AddCourse")]
-        [Produces("application/json")]
-        public IActionResult AddCourse(int stuId, int courseId)
-        {
-
-            bool result;
-
-            try
-            {
-                result = service.AddStudentToCourse(stuId,courseId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
-            }
-
-            return Ok(result);
-        }
+       
+        
         [HttpGet]
         [Route("GetAllStudents")]
         [Produces("application/json")]
         public IActionResult GetAllStudents()
         {
         
-            List<Person> results;
+            List<PersonDto> results;
 
             try
             {
-                results = service.GetCurrentStudents();
+                results = service.GetCurrentPeopleOfType(PersonType.Student);
             }
             catch (Exception ex)
             {
@@ -96,32 +57,51 @@ namespace WebApplication1.Controllers
 
             return Ok(results);
         }
+        [HttpGet]
+        [Route("GetAllTeachers")]
+        [Produces("application/json")]
+        public IActionResult GetAllTeachers()
+        {
 
+            List<PersonDto> results;
+
+            try
+            {
+                results = service.GetCurrentPeopleOfType(PersonType.Teacher);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
+            }
+
+            return Ok(results);
+        }
         [HttpPost]
-        [Route("CreateStudent")]
-        //[Produces("application/json")]
-        public String CreateStudent(Person student)
+        [Route("CreatePerson")]
+        [Produces("application/json")]
+        public IActionResult CreatePerson(PersonDto person)
         {
 
             Person result;
 
             try
             {
-                result = service.CreateStudent(student);
+                result = service.CreatePerson(person);
             }
             catch (Exception ex)
             {
                 
                 Console.WriteLine(ex.Message);
-                return "Invalid Data";
+                return BadRequest("Invalid Data");
             }
 
-            return "OK";
+            return Ok(result);
         }
         [HttpPut]
-        [Route("UpdateStudent")]
+        [Route("UpdatePerson")]
         //[Produces("application/json")]
-        public IActionResult UpdateStudent(int id,Person update)
+        public IActionResult UpdatePerson(int id,Person update)
         {
 
             if (!service.Update(id,update))

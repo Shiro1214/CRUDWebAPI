@@ -14,9 +14,49 @@ namespace WebApplication1.Controllers
         {
             this.service = service;
         }
+        [HttpPut]
+        [Route("AddCoursePerson")]
+        [Produces("application/json")]
+        public IActionResult AddCoursePerson(int stuId, int courseId)
+        {
 
+            bool result;
+
+            try
+            {
+                result = service.AddStudentToCourse(stuId, courseId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
+            }
+
+            return Ok(result);
+        }
         [HttpGet]
-        [Route("/GetStudentGrade")]
+        [Route("GetPersonCourses")]
+        [Produces("application/json")]
+        public IActionResult GetPersonCourses(int id)
+        {
+
+            List<CourseDto> result;
+
+            try
+            {
+
+                result = service.GetPersonCourses(id);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
+            }
+
+            return Ok(result);
+        }
+        [HttpGet]
+        [Route("GetStudentGrade")]
         [Produces("application/json")]
         public IActionResult GetStudentGrade(int sid, int cid)
         {
@@ -30,8 +70,8 @@ namespace WebApplication1.Controllers
             }
             return Ok(res.ToString());
         }
-        [HttpPost]
-        [Route("/ChangeStudentGrade")]
+        [HttpPut]
+        [Route("ChangeStudentGrade")]
         [Produces("application/json")]
         public IActionResult ChangeStudentGrade(int sid, int cid, char grade)
         {
