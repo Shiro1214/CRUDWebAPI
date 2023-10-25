@@ -1,5 +1,6 @@
 ﻿using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using FluentNHibernate.Utils;
 using NHibernate;
 using NHibernate.Tool.hbm2ddl;
 using NHibernate.Util;
@@ -100,7 +101,7 @@ namespace WebApplication1.Services
                 ID = person.Id,
                 LastName = person.LastName,
                 FirstMidName = person.FirstMidName,
-                PersonType = person.PersonType,
+                PersonType = person.PersonType.ToLower() == "student" ? PersonType.Student : PersonType.Teacher,
                 Street = person.Street,
                 City = person.City,
                 Province = person.Province,
@@ -152,7 +153,7 @@ namespace WebApplication1.Services
                 Id = student.ID,
                 FirstMidName = student.FirstMidName,
                 LastName = student.LastName,
-                PersonType = student.PersonType,
+                PersonType = student.PersonType == PersonType.Student ? "Student" : "Teacher",
                 Street = student.Street,
                 City = student.City,
                 Country = student.Country,
@@ -251,33 +252,101 @@ namespace WebApplication1.Services
 
             return courses;
         }
-        public PersonDto Get(int id)
+        public List<PersonCoursesDto> GetPersonCoursesGrade(int pid)
         {
-            PersonDto result;
+            List<PersonCoursesDto> personCourses = new List<PersonCoursesDto>();
+
+            using (NHibernate.ISession session = _sessionFactory.OpenSession())
+            {
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    //var p = session.Get<Person>(pid);
+                    personCourses = session.QueryOver<CoursePerson>().Where(cp => cp.person.ID == pid).List<CoursePerson>().Select(cp => new PersonCoursesDto
+                    {
+                        ID = cp.ID,
+                        course = new CourseDto()
+                        {
+                            ID = cp.course.ID,
+                            title = cp.course.title,
+                            section = cp.course.section
+                        },
+                        gradeLetter = cp.gradeLetter switch
+                        {
+                            LetterGrade.A => "A",
+                            LetterGrade.B => "B",
+                            LetterGrade.C => "C",
+                            LetterGrade.D => "D",
+                            LetterGrade.E => "E",
+                            _ => "F"
+                        }
+                    }).ToList();
+
+                    foreach (var pc in  personCourses)
+                    {
+                        var cp = session.QueryOver<CoursePerson>().Where(cp => cp.course.ID == pc.course.ID).JoinQueryOver(cp => cp.person).Where(p => p.PersonType == PersonType.Teacher).Take(1).SingleOrDefault();
+                        if (cp!= null)
+                        {
+                            var teacher = cp.person;
+                            pc.Teacher = new PersonDto
+                            {
+                                Id = teacher.ID,
+                                FirstMidName = teacher.FirstMidName,
+                                LastName = teacher.LastName,
+                                Courses = new List<CourseDto>(),
+                                PersonType = teacher.PersonType == PersonType.Student ? "Student" : "Teacher",
+                                Country = teacher.Country,
+                                Province = teacher.Province,
+                                Street = teacher.Street,
+                                City = teacher.City
+                            };
+                        }
+
+                    }
+                    transaction.Commit();
+                }
+
+            }
+
+
+            return personCourses;
+        }
+        public PersonDto? Get(int id)
+        {
+            PersonDto? result = null;
             NHibernate.ISession session = _sessionFactory.OpenSession();
             ITransaction transaction = session.BeginTransaction();
 
             var p = session.Get<Person>(id);
-            result = new PersonDto
-            {
-                Id = p.ID,
-                FirstMidName = p.FirstMidName,
-                LastName = p.LastName,
-                Courses = new List<CourseDto>()
+            if  (p!= null) {
+                result = new PersonDto
+                {
+                    Id = p.ID,
+                    FirstMidName = p.FirstMidName,
+                    LastName = p.LastName,
+                    Courses = new List<CourseDto>(),
+                    PersonType = p.PersonType == PersonType.Student ? "Student" : "Teacher",
+                    Country = p.Country,
+                    Province = p.Province,
+                    Street = p.Street,
+                    City = p.City
+
+
+                    /*session.QueryOver<CoursePerson>()
+                            .Where(cp => cp.person.ID == id)
+                            .Select(cp => cp.course)
+                            .List<Course>().Select(c => new CourseDto
+                            {
+
+                                Id = c.ID,
+                                Name = c.title + c.section
+
+                            }
+                            ).ToList()*/
+
+                };
+            }
                 
-                /*session.QueryOver<CoursePerson>()
-                        .Where(cp => cp.person.ID == id)
-                        .Select(cp => cp.course)
-                        .List<Course>().Select(c => new CourseDto
-                        {
-
-                            Id = c.ID,
-                            Name = c.title + c.section
-
-                        }
-                        ).ToList()*/
-
-        };
+           
             transaction.Commit();
 
             return result;
@@ -302,6 +371,11 @@ namespace WebApplication1.Services
                             Id = p.ID,
                             FirstMidName = p.FirstMidName,
                             LastName = p.LastName,
+                            PersonType = p.PersonType == PersonType.Student ? "Student" : p.PersonType == PersonType.Teacher? "Teacher" : "TBD",
+                            City = p.City,
+                            Street = p.Street,
+                            Province = p.Province,
+                            Country = p.Country,
                             Courses = new List<CourseDto>()
                         }).ToList()
             };

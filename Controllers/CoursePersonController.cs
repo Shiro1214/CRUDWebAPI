@@ -40,12 +40,12 @@ namespace WebApplication1.Controllers
         public IActionResult GetPersonCourses(int id)
         {
 
-            List<CourseDto> result;
+            List<PersonCoursesDto> result;
 
             try
             {
 
-                result = service.GetPersonCourses(id);
+                result = service.GetPersonCoursesGrade(id);
             }
             catch (Exception ex)
             {

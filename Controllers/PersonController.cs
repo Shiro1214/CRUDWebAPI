@@ -33,6 +33,10 @@ namespace WebApplication1.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server error contact EIS: GetLatestTest");
             }
 
+            if (result == null)
+            {
+                return Ok("Invalid ID");
+            }
             return Ok(result);
         }
        
