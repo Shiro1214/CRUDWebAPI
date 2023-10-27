@@ -7,7 +7,7 @@ namespace WebApplication1.Models
         public virtual int ID { get; set; }
         public virtual string? title { get; set; }
         public virtual string? section { get; set; }
-        public List<PersonDto>? People { get;  set; }
+        public virtual List<PersonCoursesDto>? CoursePersons { get;  set; }
         // Other properties you need
     }
 }
